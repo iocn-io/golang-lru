@@ -209,7 +209,7 @@ func TestLRU_Resize(t *testing.T) {
 }
 
 // Test that expire feature
-func TestLRU_Expire(t *testing.T) {
+func TestSimpleLRU_Expire(t *testing.T) {
 	l, err := NewLRUWithExpire(10, 2*time.Second, nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
