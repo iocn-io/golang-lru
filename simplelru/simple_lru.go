@@ -3,7 +3,6 @@ package simplelru
 import (
 	"container/list"
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -73,11 +72,9 @@ func (c *LRU) AddEx(key, value interface{}, expire time.Duration) (evicted bool)
 	if expire > 0 {
 		expire := time.Now().Add(expire)
 		ex = &expire
-		fmt.Println(".......1")
 	} else if c.expire > 0 {
 		expire := time.Now().Add(c.expire)
 		ex = &expire
-		fmt.Println(".......2")
 	}
 
 	// Check for existing item
@@ -190,7 +187,7 @@ func (c *LRU) Keys() []interface{} {
 		if v.IsExpired() {
 			continue
 		}
-		keys = append(keys, v)
+		keys = append(keys, v.key)
 	}
 	return keys
 }

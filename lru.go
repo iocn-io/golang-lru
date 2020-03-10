@@ -2,6 +2,7 @@ package lru
 
 import (
 	"sync"
+	"time"
 
 	"github.com/iocn-io/golang-lru/simplelru"
 )
@@ -30,26 +31,55 @@ func NewWithEvict(size int, onEvicted func(key interface{}, value interface{})) 
 	return c, nil
 }
 
+func NewWithExpire(size int, expire time.Duration) (*Cache, error) {
+	lru, err := simplelru.NewLRUWithExpire(size, expire, nil)
+	if err != nil {
+		return nil, err
+	}
+	c := &Cache{
+		lru: lru,
+	}
+	return c, nil
+}
+
+func NewWithEvictExpire(size int, expire time.Duration, onEvicted func(key interface{}, value interface{})) (*Cache, error) {
+	lru, err := simplelru.NewLRUWithExpire(size, expire, onEvicted)
+	if err != nil {
+		return nil, err
+	}
+	c := &Cache{
+		lru: lru,
+	}
+	return c, nil
+}
+
 // Purge is used to completely clear the cache.
 func (c *Cache) Purge() {
 	c.lock.Lock()
+	defer c.lock.Unlock()
 	c.lru.Purge()
-	c.lock.Unlock()
 }
 
 // Add adds a value to the cache. Returns true if an eviction occurred.
 func (c *Cache) Add(key, value interface{}) (evicted bool) {
 	c.lock.Lock()
+	defer c.lock.Unlock()
 	evicted = c.lru.Add(key, value)
-	c.lock.Unlock()
+	return evicted
+}
+
+func (c *Cache) AddEx(key, value interface{}, expire time.Duration) (evicted bool) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	evicted = c.lru.AddEx(key, value, expire)
 	return evicted
 }
 
 // Get looks up a key's value from the cache.
 func (c *Cache) Get(key interface{}) (value interface{}, ok bool) {
 	c.lock.Lock()
+	defer c.lock.Unlock()
 	value, ok = c.lru.Get(key)
-	c.lock.Unlock()
 	return value, ok
 }
 
@@ -57,8 +87,8 @@ func (c *Cache) Get(key interface{}) (value interface{}, ok bool) {
 // recent-ness or deleting it for being stale.
 func (c *Cache) Contains(key interface{}) bool {
 	c.lock.RLock()
+	defer c.lock.RUnlock()
 	containKey := c.lru.Contains(key)
-	c.lock.RUnlock()
 	return containKey
 }
 
@@ -66,8 +96,8 @@ func (c *Cache) Contains(key interface{}) bool {
 // the "recently used"-ness of the key.
 func (c *Cache) Peek(key interface{}) (value interface{}, ok bool) {
 	c.lock.RLock()
+	defer c.lock.RUnlock()
 	value, ok = c.lru.Peek(key)
-	c.lock.RUnlock()
 	return value, ok
 }
 
@@ -104,47 +134,47 @@ func (c *Cache) PeekOrAdd(key, value interface{}) (previous interface{}, ok, evi
 // Remove removes the provided key from the cache.
 func (c *Cache) Remove(key interface{}) (present bool) {
 	c.lock.Lock()
+	defer c.lock.Unlock()
 	present = c.lru.Remove(key)
-	c.lock.Unlock()
 	return
 }
 
 // Resize changes the cache size.
 func (c *Cache) Resize(size int) (evicted int) {
 	c.lock.Lock()
+	defer c.lock.Unlock()
 	evicted = c.lru.Resize(size)
-	c.lock.Unlock()
 	return evicted
 }
 
 // RemoveOldest removes the oldest item from the cache.
 func (c *Cache) RemoveOldest() (key interface{}, value interface{}, ok bool) {
 	c.lock.Lock()
+	defer c.lock.Unlock()
 	key, value, ok = c.lru.RemoveOldest()
-	c.lock.Unlock()
 	return
 }
 
 // GetOldest returns the oldest entry
 func (c *Cache) GetOldest() (key interface{}, value interface{}, ok bool) {
 	c.lock.Lock()
+	defer c.lock.Unlock()
 	key, value, ok = c.lru.GetOldest()
-	c.lock.Unlock()
 	return
 }
 
 // Keys returns a slice of the keys in the cache, from oldest to newest.
 func (c *Cache) Keys() []interface{} {
 	c.lock.RLock()
+	defer c.lock.RUnlock()
 	keys := c.lru.Keys()
-	c.lock.RUnlock()
 	return keys
 }
 
 // Len returns the number of items in the cache.
 func (c *Cache) Len() int {
 	c.lock.RLock()
+	defer c.lock.RUnlock()
 	length := c.lru.Len()
-	c.lock.RUnlock()
 	return length
 }

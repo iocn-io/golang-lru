@@ -1,7 +1,6 @@
 package simplelru
 
 import (
-	"fmt"
 	"testing"
 	"time"
 )
@@ -220,30 +219,40 @@ func TestLRU_Expire(t *testing.T) {
 	l.AddEx(2, 2, 60*time.Second)
 
 	if !l.Contains(1) {
-		t.Errorf("1 should be contained")
+		t.Fatal("1 should be contained")
 	}
-	fmt.Println(l.Keys())
+	if len(l.Keys()) != 2 {
+		t.Fatal("not enough keys")
+	}
 
 	time.Sleep(2 * time.Second)
 	if l.Contains(1) {
-		t.Errorf("1 should not be contained")
+		t.Fatal("1 should not be contained")
 	}
-	fmt.Println(l.Keys())
+	if len(l.Keys()) != 1 {
+		t.Fatal("not enough keys")
+	}
 
 	l.AddEx(1, 1, 1*time.Second)
-	fmt.Println(l.Keys())
+	if len(l.Keys()) != 2 {
+		t.Fatal("not enough keys")
+	}
 
 	if !l.Contains(1) {
-		t.Errorf("1 should be contained")
+		t.Fatal("1 should be contained")
 	}
-	fmt.Println(l.Keys())
+	if len(l.Keys()) != 2 {
+		t.Fatal("not enough keys")
+	}
 
 	time.Sleep(1 * time.Second)
 	if l.Contains(1) {
-		t.Errorf("1 should not be contained")
+		t.Fatal("1 should not be contained")
 	}
 	if !l.Contains(2) {
-		t.Errorf("2 should be contained")
+		t.Fatal("2 should be contained")
 	}
-	fmt.Println(l.Keys())
+	if len(l.Keys()) != 1 {
+		t.Fatal("not enough keys")
+	}
 }

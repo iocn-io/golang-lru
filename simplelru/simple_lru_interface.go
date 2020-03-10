@@ -1,10 +1,14 @@
 package simplelru
 
+import "time"
+
 // LRUCache is the interface for simple LRU cache.
 type LRUCache interface {
 	// Adds a value to the cache, returns true if an eviction occurred and
 	// updates the "recently used"-ness of the key.
 	Add(key, value interface{}) bool
+
+	AddEx(key, value interface{}, expire time.Duration) bool
 
 	// Returns key's value from the cache and
 	// updates the "recently used"-ness of the key. #value, isFound
