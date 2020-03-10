@@ -3,6 +3,7 @@ package lru
 import (
 	"math/rand"
 	"testing"
+	"time"
 )
 
 func BenchmarkLRU_Rand(b *testing.B) {
@@ -267,7 +268,7 @@ func TestLRUResize(t *testing.T) {
 	// Downsize
 	l.Add(1, 1)
 	l.Add(2, 2)
-	evicted := l.Resize(1);
+	evicted := l.Resize(1)
 	if evicted != 1 {
 		t.Errorf("1 element should have been evicted: %v", evicted)
 	}
@@ -281,7 +282,7 @@ func TestLRUResize(t *testing.T) {
 	}
 
 	// Upsize
-	evicted = l.Resize(2);
+	evicted = l.Resize(2)
 	if evicted != 0 {
 		t.Errorf("0 elements should have been evicted: %v", evicted)
 	}
@@ -289,5 +290,103 @@ func TestLRUResize(t *testing.T) {
 	l.Add(4, 4)
 	if !l.Contains(3) || !l.Contains(4) {
 		t.Errorf("Cache should have contained 2 elements")
+	}
+}
+
+// Test that expire feature
+func Test2Q_Expire(t *testing.T) {
+	l, err := New2QWithExpire(10, 2*time.Second)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	l.Add(1, 1)
+	l.AddEx(2, 2, 60*time.Second)
+
+	if !l.Contains(1) {
+		t.Fatal("1 should be contained")
+	}
+	if len(l.Keys()) != 2 {
+		t.Fatal("not enough keys")
+	}
+
+	time.Sleep(2 * time.Second)
+	if l.Contains(1) {
+		t.Fatal("1 should not be contained")
+	}
+	if len(l.Keys()) != 1 {
+		t.Fatal("not enough keys")
+	}
+
+	l.AddEx(1, 1, 1*time.Second)
+	if len(l.Keys()) != 2 {
+		t.Fatal("not enough keys")
+	}
+
+	if !l.Contains(1) {
+		t.Fatal("1 should be contained")
+	}
+	if len(l.Keys()) != 2 {
+		t.Fatal("not enough keys")
+	}
+
+	time.Sleep(1 * time.Second)
+	if l.Contains(1) {
+		t.Fatal("1 should not be contained")
+	}
+	if !l.Contains(2) {
+		t.Fatal("2 should be contained")
+	}
+	if len(l.Keys()) != 1 {
+		t.Fatal("not enough keys")
+	}
+}
+
+// Test that expire feature
+func TestARC_Expire(t *testing.T) {
+	l, err := NewARCWithExpire(10, 2*time.Second)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	l.Add(1, 1)
+	l.AddEx(2, 2, 60*time.Second)
+
+	if !l.Contains(1) {
+		t.Fatal("1 should be contained")
+	}
+	if len(l.Keys()) != 2 {
+		t.Fatal("not enough keys")
+	}
+
+	time.Sleep(2 * time.Second)
+	if l.Contains(1) {
+		t.Fatal("1 should not be contained")
+	}
+	if len(l.Keys()) != 1 {
+		t.Fatal("not enough keys")
+	}
+
+	l.AddEx(1, 1, 1*time.Second)
+	if len(l.Keys()) != 2 {
+		t.Fatal("not enough keys")
+	}
+
+	if !l.Contains(1) {
+		t.Fatal("1 should be contained")
+	}
+	if len(l.Keys()) != 2 {
+		t.Fatal("not enough keys")
+	}
+
+	time.Sleep(1 * time.Second)
+	if l.Contains(1) {
+		t.Fatal("1 should not be contained")
+	}
+	if !l.Contains(2) {
+		t.Fatal("2 should be contained")
+	}
+	if len(l.Keys()) != 1 {
+		t.Fatal("not enough keys")
 	}
 }

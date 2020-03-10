@@ -25,7 +25,8 @@ type ARCCache struct {
 	t2 simplelru.LRUCache // T2 is the LRU for frequently accessed items
 	b2 simplelru.LRUCache // B2 is the LRU for evictions from t2
 
-	lock sync.RWMutex
+	expire time.Duration
+	lock   sync.RWMutex
 }
 
 // NewARC creates an ARC of the given size
@@ -54,12 +55,13 @@ func NewARCWithExpire(size int, expire time.Duration) (*ARCCache, error) {
 
 	// Initialize the ARC
 	c := &ARCCache{
-		size: size,
-		p:    0,
-		t1:   t1,
-		b1:   b1,
-		t2:   t2,
-		b2:   b2,
+		size:   size,
+		p:      0,
+		t1:     t1,
+		b1:     b1,
+		t2:     t2,
+		b2:     b2,
+		expire: expire,
 	}
 	return c, nil
 }
@@ -88,7 +90,7 @@ func (c *ARCCache) Get(key interface{}) (value interface{}, ok bool) {
 
 // Add adds a value to the cache.
 func (c *ARCCache) Add(key, value interface{}) {
-	c.AddEx(key, value, 0)
+	c.AddEx(key, value, c.expire)
 }
 
 func (c *ARCCache) AddEx(key, value interface{}, expire time.Duration) {
