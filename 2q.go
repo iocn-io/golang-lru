@@ -3,8 +3,9 @@ package lru
 import (
 	"fmt"
 	"sync"
+	"time"
 
-	"github.com/hashicorp/golang-lru/simplelru"
+	"github.com/iocn-io/golang-lru/simplelru"
 )
 
 const (
@@ -39,12 +40,20 @@ type TwoQueueCache struct {
 // New2Q creates a new TwoQueueCache using the default
 // values for the parameters.
 func New2Q(size int) (*TwoQueueCache, error) {
-	return New2QParams(size, Default2QRecentRatio, Default2QGhostEntries)
+	return New2QParamsWithExpire(size, 0, Default2QRecentRatio, Default2QGhostEntries)
+}
+
+func New2QWithExpire(size int, expire time.Duration) (*TwoQueueCache, error) {
+	return New2QParamsWithExpire(size, expire, Default2QRecentRatio, Default2QGhostEntries)
 }
 
 // New2QParams creates a new TwoQueueCache using the provided
 // parameter values.
 func New2QParams(size int, recentRatio float64, ghostRatio float64) (*TwoQueueCache, error) {
+	return New2QParamsWithExpire(size, 0, recentRatio, ghostRatio)
+}
+
+func New2QParamsWithExpire(size int, expire time.Duration, recentRatio float64, ghostRatio float64) (*TwoQueueCache, error) {
 	if size <= 0 {
 		return nil, fmt.Errorf("invalid size")
 	}

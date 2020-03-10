@@ -1,6 +1,10 @@
 package simplelru
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+	"time"
+)
 
 func TestLRU(t *testing.T) {
 	evictCounter := 0
@@ -180,7 +184,7 @@ func TestLRU_Resize(t *testing.T) {
 	// Downsize
 	l.Add(1, 1)
 	l.Add(2, 2)
-	evicted := l.Resize(1);
+	evicted := l.Resize(1)
 	if evicted != 1 {
 		t.Errorf("1 element should have been evicted: %v", evicted)
 	}
@@ -194,7 +198,7 @@ func TestLRU_Resize(t *testing.T) {
 	}
 
 	// Upsize
-	evicted = l.Resize(2);
+	evicted = l.Resize(2)
 	if evicted != 0 {
 		t.Errorf("0 elements should have been evicted: %v", evicted)
 	}
@@ -203,4 +207,43 @@ func TestLRU_Resize(t *testing.T) {
 	if !l.Contains(3) || !l.Contains(4) {
 		t.Errorf("Cache should have contained 2 elements")
 	}
+}
+
+// Test that expire feature
+func TestLRU_Expire(t *testing.T) {
+	l, err := NewLRUWithExpire(10, 2*time.Second, nil)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	l.Add(1, 1)
+	l.AddEx(2, 2, 60*time.Second)
+
+	if !l.Contains(1) {
+		t.Errorf("1 should be contained")
+	}
+	fmt.Println(l.Keys())
+
+	time.Sleep(2 * time.Second)
+	if l.Contains(1) {
+		t.Errorf("1 should not be contained")
+	}
+	fmt.Println(l.Keys())
+
+	l.AddEx(1, 1, 1*time.Second)
+	fmt.Println(l.Keys())
+
+	if !l.Contains(1) {
+		t.Errorf("1 should be contained")
+	}
+	fmt.Println(l.Keys())
+
+	time.Sleep(1 * time.Second)
+	if l.Contains(1) {
+		t.Errorf("1 should not be contained")
+	}
+	if !l.Contains(2) {
+		t.Errorf("2 should be contained")
+	}
+	fmt.Println(l.Keys())
 }
